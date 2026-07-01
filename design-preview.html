@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RestoApp — Aperçu Mobile</title>
+<style>
+body {
+  margin: 0; background: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh; padding: 20px;
+}
+.hint { color: #555; font-size: 11px; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.3px; }
+@media (max-width: 430px) {
+  body { padding: 0; background: #0d0d0d; justify-content: flex-start; }
+  .hint { display: none; }
+}
+
+.phone {
+  width: 390px; height: 844px;
+  background: #0d0d0d;
+  border-radius: 44px; border: 8px solid #2a2a2a;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 0 1px #333;
+  overflow: hidden; position: relative; flex-shrink: 0;
+
+  --bg:  #0d0d0d; --bg2: #141414; --bg3: #1c1c1e; --bg4: #242426;
+  --brd: #2a2a2e; --brd2: #333338;
+  --txt: #f0ede8; --t2: #9a9aa0; --t3: #505058;
+  --acc: #FF6B35; --acc2: #FF3366;
+  --grn: #4CAF50; --amb: #FFB347; --red: #ff4444;
+  color: var(--txt); font-size: 14px;
+}
+@media (max-width: 430px) {
+  .phone { width: 100%; height: 100dvh; border-radius: 0; border: none; box-shadow: none; }
+}
+.phone *, .phone *::before, .phone *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.phone button { cursor: pointer; font-family: inherit; border: none; background: none; color: inherit; }
+.phone a { text-decoration: none; }
+
+/* ── App shell ── */
+.app { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; position: relative; }
+
+/* ── Overlay ── */
+#ov { position: absolute; inset: 0; background: rgba(0,0,0,0); z-index: 90; pointer-events: none; transition: background .25s; }
+#ov.open { background: rgba(0,0,0,.65); pointer-events: all; backdrop-filter: blur(1px); }
+
+/* ── DRAWER ── */
+#drawer {
+  position: absolute; top: 0; left: 0; bottom: 0; width: 280px;
+  background: var(--bg2); border-right: 1px solid var(--brd);
+  z-index: 100; display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.32,.72,0,1);
+}
+#drawer.open { transform: translateX(0); }
+
+.dr-brand { display: flex; align-items: center; gap: 10px; padding: 48px 16px 14px; border-bottom: 1px solid var(--brd); flex-shrink: 0; }
+.dr-logo { width: 36px; height: 36px; background: linear-gradient(135deg,#FF6B35,#FF3366); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(255,107,53,.3); }
+.dr-name { font-size: 11px; font-weight: 900; color: var(--t3); letter-spacing: .5px; }
+.dr-name span { color: var(--acc); }
+.dr-resto { font-size: 15px; font-weight: 800; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dr-nav { flex: 1; overflow-y: auto; padding: 8px 10px 12px; scrollbar-width: none; }
+.dr-nav::-webkit-scrollbar { display: none; }
+.dr-gl { font-size: 9px; font-weight: 800; color: var(--t3); text-transform: uppercase; letter-spacing: 1.5px; padding: 13px 8px 4px; }
+
+.dr-btn {
+  display: flex; align-items: center; gap: 11px; padding: 9px 10px;
+  border-radius: 11px; color: var(--t2); font-size: 13px; font-weight: 600;
+  width: 100%; text-align: left; position: relative;
+  transition: background .12s, color .12s;
+}
+.dr-btn:active { background: var(--bg4); }
+.dr-btn.act { background: rgba(255,107,53,.1); color: var(--acc); font-weight: 700; }
+.dr-btn.act::before { content:''; position:absolute; left:0; top:22%; bottom:22%; width:3px; border-radius:0 2px 2px 0; background:var(--acc); }
+.dr-ico { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 15px; flex-shrink: 0; }
+.dr-btn.act .dr-ico { background: rgba(255,107,53,.12); }
+.dr-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 9px; font-weight: 900; min-width: 16px; height: 16px; border-radius: 999px; padding: 0 4px; display: flex; align-items: center; justify-content: center; }
+.dr-badge.am { background: var(--amb); color: #111; }
+.dr-sep { height: 1px; background: var(--brd); margin: 5px 8px; }
+.dr-foot { padding: 10px; border-top: 1px solid var(--brd); flex-shrink: 0; }
+.dr-deco { width: 100%; padding: 10px 12px; background: rgba(255,107,53,.06); border: 1px solid rgba(255,107,53,.15); border-radius: 11px; color: var(--acc); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+/* ── HEADER ── */
+#hdr { display: flex; align-items: center; padding: 46px 14px 11px; background: var(--bg2); border-bottom: 1px solid var(--brd); gap: 10px; flex-shrink: 0; z-index: 10; }
+.hdr-l { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+.ham { width: 36px; height: 36px; background: var(--bg3); border: 1px solid var(--brd); border-radius: 10px; font-size: 15px; color: var(--txt); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hdr-lbl { font-size: 11px; font-weight: 900; color: var(--t3); letter-spacing: .4px; }
+.hdr-lbl span { color: var(--acc); }
+.hdr-sub { font-size: 17px; font-weight: 800; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdr-r { display: flex; gap: 6px; flex-shrink: 0; }
+.hdr-ic { width: 36px; height: 36px; background: var(--bg3); border: 1px solid var(--brd); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative; }
+.hdr-dot { width: 7px; height: 7px; background: var(--red); border-radius: 50%; border: 2px solid var(--bg2); position: absolute; top: -2px; right: -2px; }
+
+/* ── CONTENT ── */
+#mc { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 16px 4px; scrollbar-width: none; }
+#mc::-webkit-scrollbar { display: none; }
+
+/* ── BOTTOM NAV ── */
+#bn { display: flex; background: var(--bg2); border-top: 1px solid var(--brd); padding: 8px 0 20px; flex-shrink: 0; }
+.nb { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px 0; color: var(--t3); font-size: 8px; font-weight: 700; position: relative; }
+.nb.act { color: var(--acc); }
+.nb .ni { font-size: 20px; }
+.nb-dot { width: 4px; height: 4px; background: var(--acc); border-radius: 50%; margin-top: 1px; }
+.nb-al { position: absolute; top: 1px; right: calc(50% - 16px); width: 7px; height: 7px; border-radius: 50%; border: 2px solid var(--bg2); }
+
+/* ── Helpers ── */
+.slabel { font-size: 9px; font-weight: 800; color: var(--t3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+.card { background: var(--bg3); border: 1px solid var(--brd); border-radius: 16px; padding: 14px; margin-bottom: 10px; }
+.ch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.ct { font-size: 9px; font-weight: 800; color: var(--t3); text-transform: uppercase; letter-spacing: 1px; }
+.clink { font-size: 11px; color: var(--acc); font-weight: 700; }
+.badge { font-size: 9px; font-weight: 800; padding: 3px 7px; border-radius: 999px; }
+.bg { background: rgba(76,175,80,.1); color: var(--grn); border: 1px solid rgba(76,175,80,.2); }
+.ba { background: rgba(255,179,71,.1); color: var(--amb); border: 1px solid rgba(255,179,71,.2); }
+.br { background: rgba(255,68,68,.1);  color: var(--red); border: 1px solid rgba(255,68,68,.2); }
+.row { display: flex; justify-content: space-between; align-items: center; }
+.li { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--brd); }
+.li:last-child { border-bottom: none; padding-bottom: 0; }
+.lav { width: 34px; height: 34px; background: var(--bg4); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.linf { flex: 1; min-width: 0; }
+.ln { font-size: 13px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ls { font-size: 10px; color: var(--t3); margin-top: 1px; }
+.lamt { font-size: 13px; font-weight: 800; color: var(--txt); flex-shrink: 0; }
+.btn-p { background: linear-gradient(135deg,#FF6B35,#FF3366); border: none; border-radius: 12px; padding: 13px 16px; color: #fff; font-size: 13px; font-weight: 800; width: 100%; margin-bottom: 8px; cursor: pointer; }
+.btn-o { background: transparent; border: 1px solid var(--brd); border-radius: 12px; padding: 13px 16px; color: var(--txt); font-size: 13px; font-weight: 700; width: 100%; margin-bottom: 8px; cursor: pointer; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.sc { background: var(--bg3); border: 1px solid var(--brd); border-radius: 16px; padding: 14px; }
+.sv { font-size: 20px; font-weight: 900; letter-spacing: -.5px; margin: 5px 0 2px; }
+.sl { font-size: 9px; color: var(--t3); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.input { width: 100%; background: var(--bg2); border: 1px solid var(--brd); border-radius: 12px; padding: 12px 14px; color: var(--txt); font-size: 14px; margin-bottom: 10px; outline: none; font-family: inherit; }
+.input:focus { border-color: var(--acc); }
+.stabs { display: flex; gap: 7px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.stabs::-webkit-scrollbar { display: none; }
+.stab { flex-shrink: 0; background: var(--bg3); border: 1px solid var(--brd); border-radius: 10px; padding: 8px 14px; color: var(--t3); font-size: 11px; font-weight: 700; cursor: pointer; }
+.stab.act { background: var(--acc); border-color: var(--acc); color: #fff; }
+.bbar { background: var(--bg4); border-radius: 4px; height: 5px; overflow: hidden; margin-top: 4px; }
+.bfill { height: 5px; border-radius: 4px; }
+.alert-s { display: flex; align-items: center; gap: 11px; border-radius: 13px; padding: 11px 13px; margin-bottom: 8px; cursor: pointer; }
+.alert-s.r { background: rgba(255,68,68,.07); border: 1px solid rgba(255,68,68,.18); }
+.alert-s.a { background: rgba(255,179,71,.07); border: 1px solid rgba(255,179,71,.18); }
+.alert-s.g { background: rgba(76,175,80,.07); border: 1px solid rgba(76,175,80,.18); }
+.at { font-size: 12px; font-weight: 700; }
+.r .at { color: var(--red); } .a .at { color: var(--amb); } .g .at { color: var(--grn); }
+.as { font-size: 10px; color: var(--t3); margin-top: 1px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 50px; margin-bottom: 4px; }
+.bc { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bf { width: 100%; border-radius: 3px 3px 0 0; background: rgba(255,107,53,.2); min-height: 4px; }
+.bf.cur { background: var(--acc); }
+.bl { font-size: 8px; color: var(--t3); font-weight: 600; }
+.sep { height: 1px; background: var(--brd); margin: 10px 0; }
+/* FAB */
+.fab { position: absolute; bottom: 90px; right: 16px; width: 48px; height: 48px; background: linear-gradient(135deg,#FF6B35,#FF3366); border-radius: 50%; border: none; font-size: 22px; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(255,107,53,.45); z-index: 5; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="hint">☰ = ouvrir le menu · onglets bas = navigation principale</div>
+<div class="phone">
+<div class="app">
+
+<!-- Overlay -->
+<div id="ov" onclick="closeDrawer()"></div>
+
+<!-- ════ DRAWER ════ -->
+<nav id="drawer">
+  <div class="dr-brand">
+    <div class="dr-logo">🍽️</div>
+    <div>
+      <div class="dr-name">Resto<span>App</span></div>
+      <div class="dr-resto">Mon Restaurant</div>
+    </div>
+  </div>
+  <div class="dr-nav">
+    <button class="dr-btn act" onclick="go('dashboard',this)"><div class="dr-ico">⚡</div>Tableau de bord</button>
+    <div class="dr-gl">Activité</div>
+    <button class="dr-btn" onclick="go('commandes',this)"><div class="dr-ico">📦</div>Commandes<span class="dr-badge am">3</span></button>
+    <button class="dr-btn" onclick="go('fournisseurs',this)"><div class="dr-ico">🏪</div>Fournisseurs</button>
+    <button class="dr-btn" onclick="go('factures',this)"><div class="dr-ico">🧾</div>Factures<span class="dr-badge">2</span></button>
+    <div class="dr-gl">Cuisine & Bar</div>
+    <button class="dr-btn" onclick="go('cuisine',this)"><div class="dr-ico">🍳</div>Cuisine</button>
+    <button class="dr-btn" onclick="go('bar',this)"><div class="dr-ico">🍷</div>Bar</button>
+    <div class="dr-gl">Stocks & Qualité</div>
+    <button class="dr-btn" onclick="go('stocks',this)"><div class="dr-ico">📦</div>Stocks<span class="dr-badge">4</span></button>
+    <button class="dr-btn" onclick="go('temp',this)"><div class="dr-ico">🌡️</div>Températures</button>
+    <button class="dr-btn" onclick="go('tracabilite',this)"><div class="dr-ico">🏷️</div>Traçabilité</button>
+    <div class="dr-gl">Équipe</div>
+    <button class="dr-btn" onclick="go('equipe',this)"><div class="dr-ico">👥</div>Équipe</button>
+    <button class="dr-btn" onclick="go('pointages',this)"><div class="dr-ico">📍</div>Pointages</button>
+    <button class="dr-btn" onclick="go('recettes',this)"><div class="dr-ico">🍽️</div>Recettes</button>
+    <button class="dr-btn" onclick="go('notes',this)"><div class="dr-ico">📢</div>Notes service</button>
+    <div class="dr-gl">Administration</div>
+    <button class="dr-btn" onclick="go('business',this)"><div class="dr-ico">🏢</div>Business</button>
+    <button class="dr-btn" onclick="go('comptable',this)"><div class="dr-ico">📊</div>Comptable</button>
+    <button class="dr-btn" onclick="go('import',this)"><div class="dr-ico">📥</div>Import CSV</button>
+    <button class="dr-btn" onclick="go('messages',this)"><div class="dr-ico">✉️</div>Messages</button>
+    <div class="dr-sep"></div>
+    <button class="dr-btn" onclick="go('sav',this)"><div class="dr-ico">💬</div>Support</button>
+  </div>
+  <div class="dr-foot">
+    <button class="dr-deco">🚪 Se déconnecter</button>
+  </div>
+</nav>
+
+<!-- ════ HEADER ════ -->
+<header id="hdr">
+  <div class="hdr-l">
+    <button class="ham" onclick="toggleDrawer()">☰</button>
+    <div>
+      <div class="hdr-lbl">Resto<span>App</span></div>
+      <div class="hdr-sub" id="hsub">Mon Restaurant</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-ic">🔔<span class="hdr-dot"></span></div>
+    <div class="hdr-ic" style="font-size:18px">≡</div>
+  </div>
+</header>
+
+<!-- ════ CONTENT ════ -->
+<div id="mc"></div>
+
+<!-- ════ BOTTOM NAV ════ -->
+<nav id="bn">
+  <button class="nb act" id="bn-dashboard" onclick="go('dashboard',this,'bn')"><span class="ni">⚡</span><span>Accueil</span><div class="nb-dot"></div></button>
+  <button class="nb" id="bn-commandes" onclick="go('commandes',this,'bn')" style="position:relative"><span class="ni">📦</span><span>Commandes</span><span class="nb-al" style="background:var(--amb)"></span></button>
+  <button class="nb" id="bn-factures" onclick="go('factures',this,'bn')" style="position:relative"><span class="ni">🧾</span><span>Factures</span><span class="nb-al" style="background:var(--red)"></span></button>
+  <button class="nb" id="bn-pointages" onclick="go('pointages',this,'bn')"><span class="ni">📍</span><span>Pointages</span></button>
+  <button class="nb" id="bn-equipe" onclick="go('equipe',this,'bn')"><span class="ni">👥</span><span>Équipe</span></button>
+</nav>
+
+</div><!-- /app -->
+</div><!-- /phone -->
+
+<script>
+/* ═══ Pages ═══════════════════════════════════════════════════════ */
+const PAGES = {
+
+dashboard: `
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <div style="font-size:11px;color:var(--t3);font-weight:600;text-transform:capitalize">dimanche 29 juin 2026</div>
+    <div style="font-size:22px;font-weight:900;margin-top:2px">Bonjour 👋</div>
+  </div>
+  <button style="background:linear-gradient(135deg,#FF6B35,#FF3366);border:none;border-radius:12px;padding:9px 14px;color:#fff;font-size:12px;font-weight:800;margin-top:4px">+ Ajouter</button>
+</div>
+<div class="alert-s r"><span style="font-size:16px">⚠️</span><div><div class="at">4 produits sous le seuil</div><div class="as">Carottes, Bière pression…</div></div><span style="color:var(--t3);margin-left:auto">›</span></div>
+<div class="alert-s a" style="margin-bottom:14px"><span style="font-size:16px">🧾</span><div><div class="at">2 factures en retard +30j</div><div class="as">1 190 € en attente</div></div><span style="color:var(--t3);margin-left:auto">›</span></div>
+<div class="slabel">Vue d'ensemble</div>
+<div class="g2">
+  <div class="sc"><div style="font-size:18px">🍳</div><div class="sv" style="color:#FF6B35">4 820 €</div><div class="sl">Cuisine · ce mois</div><div style="font-size:9px;color:var(--red);font-weight:700;margin-top:4px">↑ +12%</div></div>
+  <div class="sc"><div style="font-size:18px">🍷</div><div class="sv" style="color:#8B5CF6">1 960 €</div><div class="sl">Bar · ce mois</div><div style="font-size:9px;color:var(--grn);font-weight:700;margin-top:4px">↓ −5%</div></div>
+  <div class="sc"><div style="font-size:18px">⏳</div><div class="sv" style="color:#ff4444">1 190 €</div><div class="sl">À payer</div><div style="font-size:9px;color:var(--t3);font-weight:700;margin-top:4px">2 factures</div></div>
+  <div class="sc"><div style="font-size:18px">👥</div><div class="sv" style="color:#4CAF50">3 pers.</div><div class="sl">Équipe active</div><div style="font-size:9px;color:var(--t3);font-weight:700;margin-top:4px">1 en congé</div></div>
+</div>
+<div class="slabel">Actions rapides</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+  ${[['🏪','Fournisseur'],['📄','Facture'],['📦','Stock'],['📍','Pointage'],['🍽️','Recette'],['📢','Note']].map(([i,l])=>`<button style="background:var(--bg3);border:1px solid var(--brd);border-radius:14px;padding:13px 6px 11px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--t2)"><div style="font-size:22px">${i}</div>${l}</button>`).join('')}
+</div>
+<div class="card">
+  <div class="ch"><span class="ct">📊 Dépenses 6 mois</span><span style="font-size:11px;font-weight:800;color:var(--acc)">16 780 €</span></div>
+  <div class="bar-chart">
+    ${[[30,'jan'],[48,'fév'],[40,'mar'],[62,'avr'],[46,'mai'],[74,'juin',true]].map(([h,l,c])=>`<div class="bc"><div class="bf${c?' cur':''}" style="height:${h}%"></div><div class="bl">${l}</div></div>`).join('')}
+  </div>
+</div>
+<div class="card">
+  <div class="ch"><span class="ct">Factures récentes</span><span class="clink" onclick="go('factures')">Voir tout →</span></div>
+  ${[['🥩','Boucherie Centrale','F-001 · 24 mai','850 €','bg','Payée'],['🥦','Les Jardins Verts','F-002 · 22 mai','340 €','ba','Attente'],['🍷','Cave du Sommelier','BC-001 · 20 mai','620 €','ba','Attente']].map(([i,n,s,a,b,bl])=>`<div class="li"><div class="lav">${i}</div><div class="linf"><div class="ln">${n}</div><div class="ls">${s}</div></div><div style="text-align:right"><div class="lamt">${a}</div><span class="badge ${b}" style="margin-top:2px;display:inline-block">${bl}</span></div></div>`).join('')}
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="ch"><span class="ct">Équipe</span><span class="clink" onclick="go('pointages')">Pointages →</span></div>
+  ${[['👨‍🍳','Jean Martin','Chef · CDI 39h','bg','Actif'],['👩‍💼','Sophie Blanc','Serveuse · CDI 35h','bg','Actif'],['🧑‍🍳','Lucas Petit','Barman · CDD 30h','ba','Congé']].map(([i,n,s,b,bl])=>`<div class="li"><div class="lav">${i}</div><div class="linf"><div class="ln">${n}</div><div class="ls">${s}</div></div><span class="badge ${b}">${bl}</span></div>`).join('')}
+</div>`,
+
+factures: `
+<div class="stabs">
+  ${['Toutes','Payées','En attente','Bons cmd'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}
+</div>
+<div class="slabel">Juin 2026 — 3 factures · 1 810 €</div>
+${[['🥩','Boucherie Centrale','F-2026-001','24 mai 2026','850 €','bg','Payée'],['🥦','Les Jardins Verts','F-2026-002','22 mai 2026','340 €','ba','En attente'],['🍷','Cave du Sommelier','BC-2026-001','20 mai 2026','620 €','ba','Bon cmd']].map(([i,n,num,d,a,b,s])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:flex-start;gap:11px">
+    <div style="width:36px;height:36px;background:var(--bg4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${i}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:var(--txt)">${n}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${num} · ${d}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:15px;font-weight:900;color:var(--txt)">${a}</div>
+      <span class="badge ${b}" style="margin-top:3px;display:inline-block">${s}</span>
+    </div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+fournisseurs: `
+<div class="stabs">
+  ${['Tous','Cuisine','Bar'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}
+</div>
+<input class="input" placeholder="🔍  Rechercher un fournisseur…">
+<div class="slabel">3 fournisseurs</div>
+${[['🥩','Boucherie Centrale','Viandes/Poissons','cuisine','3 factures · 850 €'],['🥦','Les Jardins Verts','Légumes/Fruits','cuisine','2 factures · 490 €'],['🍷','Cave du Sommelier','Vins/Alcools','bar','1 facture · 620 €']].map(([i,n,cat,type,info])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:40px;height:40px;background:var(--bg4);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${i}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:var(--txt)">${n}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${cat}</div>
+    </div>
+    <div style="text-align:right">
+      <span style="font-size:9px;background:${type==='cuisine'?'rgba(255,107,53,.12)':'rgba(139,92,246,.12)'};color:${type==='cuisine'?'var(--acc)':'#8B5CF6'};border:1px solid ${type==='cuisine'?'rgba(255,107,53,.2)':'rgba(139,92,246,.2)'};border-radius:999px;padding:3px 8px;font-weight:800">${type==='cuisine'?'🍳 Cuisine':'🍷 Bar'}</span>
+      <div style="font-size:10px;color:var(--t3);margin-top:4px">${info}</div>
+    </div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+stocks: `
+<div class="stabs">
+  ${['Tous','Critique','Cuisine','Bar'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}
+</div>
+<div class="alert-s r" style="margin-bottom:12px"><span style="font-size:16px">⚠️</span><div><div class="at">4 produits sous le seuil minimal</div><div class="as">Commander rapidement</div></div></div>
+<div class="slabel">Stocks cuisine</div>
+${[['🥩','Viande bœuf','8 kg','seuil 5',66,'grn'],['🥕','Carottes','3 kg','seuil 4',25,'red'],['🧅','Oignons','12 kg','seuil 3',100,'grn'],['🍅','Tomates','6 kg','seuil 5',80,'grn']].map(([i,n,q,s,pct,c])=>`
+<div class="card" style="padding:12px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <div style="font-size:20px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${s}</div></div>
+    <div style="font-size:14px;font-weight:800;color:${c==='red'?'var(--red)':c==='amb'?'var(--amb)':'var(--txt)'}">${q}</div>
+  </div>
+  <div class="bbar"><div class="bfill" style="width:${pct}%;background:${c==='red'?'var(--red)':c==='amb'?'var(--amb)':'var(--grn)'}"></div></div>
+</div>`).join('')}
+<div class="slabel" style="margin-top:4px">Stocks bar</div>
+${[['🍷','Vin rouge','12 btl','seuil 10',80,'grn'],['🍺','Bière pression','2 fûts','seuil 3',10,'red']].map(([i,n,q,s,pct,c])=>`
+<div class="card" style="padding:12px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <div style="font-size:20px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${s}</div></div>
+    <div style="font-size:14px;font-weight:800;color:${c==='red'?'var(--red)':'var(--txt)'}">${q}</div>
+  </div>
+  <div class="bbar"><div class="bfill" style="width:${pct}%;background:${c==='red'?'var(--red)':'var(--grn)'}"></div></div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+equipe: `
+<div class="stabs">
+  ${['Actifs','Tous','Congés'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}
+</div>
+<div class="slabel">3 employés</div>
+${[['👨‍🍳','Jean Martin','Chef de cuisine','CDI · 39h/sem','bg','Actif','13 €/h'],['👩‍💼','Sophie Blanc','Serveuse','CDI · 35h/sem','bg','Actif','12 €/h'],['🧑‍🍳','Lucas Petit','Barman','CDD · 30h/sem','ba','Congé','12.5 €/h']].map(([i,n,p,c,b,s,t])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:42px;height:42px;background:var(--bg4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${i}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:800">${n}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px">${p}</div>
+      <div style="font-size:10px;color:var(--t3)">${c} · ${t}</div>
+    </div>
+    <span class="badge ${b}">${s}</span>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+pointages: `
+<div class="stabs">
+  ${['Aujourd\'hui','Cette semaine','Ce mois'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}
+</div>
+<div class="card">
+  <div class="ch"><span class="ct">Dimanche 29 juin</span><span style="font-size:11px;color:var(--t3)">2 pointés / 3</span></div>
+  ${[['👨‍🍳','Jean Martin','09:00 → 17:30','8h30','bg'],['👩‍💼','Sophie Blanc','11:00 → 15:30','4h30','bg'],['🧑‍🍳','Lucas Petit','—','Congé','ba']].map(([i,n,h,t,b])=>`<div class="li"><div class="lav">${i}</div><div class="linf"><div class="ln">${n}</div><div class="ls">${h}</div></div><div style="text-align:right"><div style="font-size:12px;font-weight:800;color:var(--txt)">${t}</div><span class="badge ${b}" style="margin-top:2px;display:inline-block">${b==='bg'?'Pointé':'Congé'}</span></div></div>`).join('')}
+</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="ch"><span class="ct">Récapitulatif semaine</span></div>
+  ${[['👨‍🍳','Jean Martin','38h30 / 39h','bg'],['👩‍💼','Sophie Blanc','34h / 35h','bg'],['🧑‍🍳','Lucas Petit','0h / 30h','ba']].map(([i,n,h,b])=>`<div class="li"><div class="lav">${i}</div><div class="linf"><div class="ln">${n}</div></div><div style="font-size:12px;font-weight:800;color:${b==='ba'?'var(--amb)':'var(--txt)'}">${h}</div></div>`).join('')}
+</div>`,
+
+commandes: `
+<div class="slabel">Aujourd'hui — 3 rappels</div>
+${[['🥩','Boucherie Centrale','Commander avant 10h','⚠️ Urgent','red'],['🥕','Les Jardins Verts','Livraison attendue demain','📅 Planifié','amb'],['🍷','Cave du Sommelier','Commande mensuelle','📅 Planifié','amb']].map(([i,n,s,tag,c])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:36px;height:36px;background:var(--bg4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">${s}</div></div>
+    <span class="badge b${c.charAt(0)}">${tag}</span>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+cuisine: `
+<div class="stabs">${['Fournisseurs','Factures'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}</div>
+<div class="g2" style="margin-bottom:14px">
+  <div class="sc"><div style="font-size:18px">🏪</div><div class="sv">2</div><div class="sl">Fournisseurs</div></div>
+  <div class="sc"><div style="font-size:18px">💰</div><div class="sv" style="color:var(--acc)">4 820 €</div><div class="sl">Ce mois</div></div>
+</div>
+${[['🥩','Boucherie Centrale','Viandes/Poissons','850 €'],['🥦','Les Jardins Verts','Légumes/Fruits','490 €']].map(([i,n,c,a])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:38px;height:38px;background:rgba(255,107,53,.1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${c}</div></div>
+    <div style="font-size:13px;font-weight:800;color:var(--acc)">${a}</div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+bar: `
+<div class="stabs">${['Fournisseurs','Factures'].map((l,i)=>`<button class="stab${i===0?' act':''}" onclick="this.parentElement.querySelectorAll('.stab').forEach(b=>b.classList.remove('act'));this.classList.add('act')">${l}</button>`).join('')}</div>
+<div class="g2" style="margin-bottom:14px">
+  <div class="sc"><div style="font-size:18px">🏪</div><div class="sv">1</div><div class="sl">Fournisseur</div></div>
+  <div class="sc"><div style="font-size:18px">💰</div><div class="sv" style="color:#8B5CF6">1 960 €</div><div class="sl">Ce mois</div></div>
+</div>
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:38px;height:38px;background:rgba(139,92,246,.1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px">🍷</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">Cave du Sommelier</div><div style="font-size:10px;color:var(--t3)">Vins/Alcools</div></div>
+    <div style="font-size:13px;font-weight:800;color:#8B5CF6">620 €</div>
+  </div>
+</div>
+<div style="margin-bottom:20px"></div>`,
+
+business: `
+<div class="slabel">Documents légaux</div>
+${[['📋','KBIS','Extrait Kbis 2024','bg','OK'],['📜','Licence IV','Licence alcools','bg','OK'],['🔒','Assurance RC Pro','Expire déc. 2026','bg','OK'],['🌡️','Contrôle hygiène','À renouveler','br','Manquant']].map(([i,n,s,b,st])=>`
+<div class="card" style="padding:12px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:36px;height:36px;background:var(--bg4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${s}</div></div>
+    <span class="badge ${b}">${st}</span>
+  </div>
+</div>`).join('')}
+<div class="slabel" style="margin-top:4px">Ratios financiers</div>
+<div class="g2" style="margin-bottom:20px">
+  <div class="sc"><div style="font-size:18px">📊</div><div class="sv" style="color:var(--grn)">28%</div><div class="sl">Food cost</div></div>
+  <div class="sc"><div style="font-size:18px">💼</div><div class="sv">2 200 €</div><div class="sl">Masse sal. est.</div></div>
+</div>`,
+
+comptable: `
+<div class="g2" style="margin-bottom:14px">
+  <div class="sc"><div style="font-size:18px">💰</div><div class="sv" style="color:var(--acc)">16 780 €</div><div class="sl">6 derniers mois</div></div>
+  <div class="sc"><div style="font-size:18px">📄</div><div class="sv">6</div><div class="sl">Factures total</div></div>
+</div>
+<div class="card">
+  <div class="ch"><span class="ct">📊 Évolution mensuelle</span></div>
+  <div class="bar-chart">
+    ${[[30,'jan'],[48,'fév'],[40,'mar'],[62,'avr'],[46,'mai'],[74,'juin',true]].map(([h,l,c])=>`<div class="bc"><div class="bf${c?' cur':''}" style="height:${h}%"></div><div class="bl">${l}</div></div>`).join('')}
+  </div>
+</div>
+<button class="btn-p" style="margin-top:4px">📤 Exporter résumé comptable PDF</button>
+<div style="margin-bottom:20px"></div>`,
+
+temp: `
+<div class="slabel">Appareils surveillés</div>
+${[['🧊','Chambre froide n°1','Réfrigérateur','-1.2 °C','bg','OK'],['🧊','Chambre froide n°2','Réfrigérateur','3.8 °C','bg','OK'],['❄️','Congélateur bar','Congélateur','-22 °C','bg','OK'],['⚠️','Frigo cuisine','Réfrigérateur','6.1 °C','br','Alerte']].map(([i,n,t,v,b,s])=>`
+<div class="card" style="padding:12px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="font-size:24px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${t}</div></div>
+    <div style="text-align:right"><div style="font-size:15px;font-weight:900;color:${b==='br'?'var(--red)':'var(--grn)'}">${v}</div><span class="badge ${b}" style="display:inline-block;margin-top:2px">${s}</span></div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+tracabilite: `
+<div class="slabel">Produits en stock</div>
+${[['🥩','Filet de bœuf','DLC 30/06','br','Expire demain'],['🐟','Saumon frais','DLC 02/07','ba','Urgent'],['🥦','Carottes','DDM 15/07','bg','OK'],['🧀','Fromage AOP','DLC 10/07','bg','OK']].map(([i,n,d,b,s])=>`
+<div class="card" style="padding:12px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="font-size:22px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${d}</div></div>
+    <span class="badge ${b}">${s}</span>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+recettes: `
+<div class="slabel">Fiches recettes</div>
+${[['🥩','Entrecôte grillée','Cuisine · 4 pers.','18 €/pers.'],['🍝','Risotto aux champignons','Cuisine · 2 pers.','9 €/pers.'],['🍷','Planche apéro','Bar · 4 pers.','14 €/pers.']].map(([i,n,s,p])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:38px;height:38px;background:var(--bg4);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px">${i}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:10px;color:var(--t3)">${s}</div></div>
+    <div style="font-size:12px;font-weight:800;color:var(--acc)">${p}</div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+notes: `
+<div class="alert-s a" style="margin-bottom:12px"><span style="font-size:16px">🔴</span><div><div class="at">URGENT — Attention commande boeuf</div><div class="as">Ce soir · Jean Martin</div></div></div>
+${[['📢','Réunion équipe lundi 9h','Service · dimanche','Patron'],['📋','Recette carbonara nouvelle version','Cuisine · samedi','Jean Martin']].map(([i,t,d,a])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:flex-start;gap:11px">
+    <div style="font-size:22px;flex-shrink:0">${i}</div>
+    <div><div style="font-size:13px;font-weight:700">${t}</div><div style="font-size:10px;color:var(--t3);margin-top:3px">${d} · ${a}</div></div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+import: `
+<div style="border:2px dashed var(--brd);border-radius:14px;padding:30px 20px;text-align:center;margin-bottom:14px">
+  <div style="font-size:36px;margin-bottom:12px">📥</div>
+  <div style="font-size:14px;font-weight:800;margin-bottom:6px">Importer un fichier CSV</div>
+  <div style="font-size:12px;color:var(--t3);margin-bottom:16px">Depuis votre caisse ou logiciel comptable</div>
+  <button class="btn-p" style="width:auto;padding:10px 24px">Choisir un fichier</button>
+</div>
+<div class="slabel">Format accepté</div>
+<div class="card" style="padding:12px;margin-bottom:20px">
+  ${['Colonnes : date, fournisseur, montant, statut','Encodage : UTF-8','Séparateur : virgule ou point-virgule'].map(l=>`<div style="font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--brd);display:flex;gap:8px"><span style="color:var(--grn)">✓</span>${l}</div>`).join('')}
+</div>`,
+
+messages: `
+<div class="slabel">Conversations</div>
+${[['💬','Support RestoApp','Bonjour ! Comment puis-je…','il y a 2j','bg'],['📧','Comptable','Documents reçus, merci','il y a 5j',''],['📋','Jean Martin','Je serai absent lundi','il y a 1 sem','']].map(([i,n,m,t,b])=>`
+<div class="card" style="padding:13px">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="font-size:24px;flex-shrink:0">${i}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m}</div></div>
+    <div style="font-size:10px;color:var(--t3);flex-shrink:0">${t}</div>
+  </div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`,
+
+sav: `
+<div class="card" style="text-align:center;padding:24px 16px;margin-bottom:12px">
+  <div style="font-size:40px;margin-bottom:10px">💬</div>
+  <div style="font-size:16px;font-weight:900;margin-bottom:6px">Besoin d'aide ?</div>
+  <div style="font-size:12px;color:var(--t3);margin-bottom:16px">Notre équipe répond en moins de 2h</div>
+  <button class="btn-p" style="width:auto;padding:10px 28px">WhatsApp — Contacter le support</button>
+</div>
+<div class="slabel">FAQ rapide</div>
+${[['Comment ajouter un fournisseur ?','Allez dans Fournisseurs → bouton ＋'],['Comment exporter ma compta ?','Comptable → Exporter résumé PDF'],['Modifier le mot de passe ?','Menu → Mon compte → Sécurité']].map(([q,a])=>`
+<div class="card" style="padding:12px;margin-bottom:8px">
+  <div style="font-size:12px;font-weight:700;margin-bottom:4px">${q}</div>
+  <div style="font-size:11px;color:var(--t3)">${a}</div>
+</div>`).join('')}
+<div style="margin-bottom:20px"></div>`
+};
+
+/* ═══ Routing ═══════════════════════════════════════════════════════ */
+let curPage = 'dashboard';
+
+const PAGE_TITLES = {
+  dashboard:'Mon Restaurant', factures:'Factures', fournisseurs:'Fournisseurs',
+  stocks:'Stocks', equipe:'Équipe', pointages:'Pointages', commandes:'Commandes',
+  cuisine:'Cuisine', bar:'Bar', business:'Business', comptable:'Comptable',
+  temp:'Températures', tracabilite:'Traçabilité', recettes:'Recettes',
+  notes:'Notes service', import:'Import CSV', messages:'Messages', sav:'Support'
+};
+
+function go(page, srcBtn, srcType) {
+  if (!PAGES[page]) return;
+  curPage = page;
+
+  // Content
+  document.getElementById('mc').innerHTML = PAGES[page];
+
+  // Header subtitle
+  document.getElementById('hsub').textContent = PAGE_TITLES[page] || page;
+
+  // Drawer active
+  document.querySelectorAll('.dr-btn').forEach(b => b.classList.remove('act'));
+  const drBtn = document.querySelector(`.dr-btn[onclick*="'${page}'"]`);
+  if (drBtn) drBtn.classList.add('act');
+
+  // Bottom nav active
+  document.querySelectorAll('.nb').forEach(b => {
+    b.classList.remove('act');
+    b.querySelectorAll('.nb-dot').forEach(d => d.remove());
+  });
+  const bnBtn = document.getElementById('bn-'+page);
+  if (bnBtn) {
+    bnBtn.classList.add('act');
+    const dot = document.createElement('div');
+    dot.className = 'nb-dot';
+    bnBtn.appendChild(dot);
+  }
+
+  // Scroll top
+  document.getElementById('mc').scrollTop = 0;
+
+  // Close drawer
+  closeDrawer();
+}
+
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('ov').classList.toggle('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('ov').classList.remove('open');
+}
+
+// Init
+go('dashboard');
+</script>
+</body>
+</html>
