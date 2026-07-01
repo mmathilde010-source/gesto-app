@@ -5,8 +5,10 @@
   for = "/*.html"
   [headers.values]
     Content-Type = "text/html; charset=UTF-8"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/"
   [headers.values]
     Content-Type = "text/html; charset=UTF-8"
+    Cache-Control = "no-cache, no-store, must-revalidate"
