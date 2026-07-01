@@ -24,3 +24,6 @@ npm-debug.log*
 # Fichiers temporaires
 *.tmp
 *.zip
+
+# Token Netlify (secret)
+.netlify-token
