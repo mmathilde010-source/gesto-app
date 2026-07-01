@@ -1,6 +1,6 @@
 {
-  "name": "RestoApp",
-  "short_name": "RestoApp",
+  "name": "Gest'O",
+  "short_name": "Gest'O",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f0f",
